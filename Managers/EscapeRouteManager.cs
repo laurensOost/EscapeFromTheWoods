@@ -10,6 +10,7 @@ namespace EscapeFromTheWoods
     public class EscapeRouteManager
     {
         private const int DrawingFactor = 8;
+        
         private DBwriter _dbWriter;
         private string _path;
         private Map _map;

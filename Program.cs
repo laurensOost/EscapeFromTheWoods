@@ -13,7 +13,7 @@ namespace EscapeFromTheWoods
             stopwatch.Start();
             Console.WriteLine("Escape From The Woods");
 
-            // Updated MongoDB connection string
+            // MongoDB connection string
             string connectionString = "mongodb://localhost:27017";
             DBwriter db = new DBwriter(connectionString);
 
