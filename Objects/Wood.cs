@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace EscapeFromTheWoods
 {
@@ -29,7 +30,7 @@ namespace EscapeFromTheWoods
             _monkeyManager.PlaceMonkey(WoodID, monkeyName, monkeyID, _trees, _r);
         }
 
-        public void Escape()
+        /*public void Escape() // originele zonder async
         {
             List<List<Tree>> routes = new List<List<Tree>>();
             foreach (Monkey m in _monkeyManager.GetMonkeys())
@@ -38,6 +39,21 @@ namespace EscapeFromTheWoods
                 routes.Add(route);
             }
             _escapeRouteManager.WriteEscapeRoutesToBitmap(WoodID, routes);
+            _dbWriter.WriteLogRecord(new DBLogRecord { woodID = WoodID, message = "Escape ended" });
+        }*/
+        
+        public async Task Escape() // async, sneller 
+        {
+            List<List<Tree>> routes = new List<List<Tree>>();
+            foreach (Monkey m in _monkeyManager.GetMonkeys())
+            {
+                var route = _escapeRouteManager.FindEscapeRoute(WoodID, m);
+                routes.Add(route);
+            }
+        
+            // Now awaiting the asynchronous call to write the bitmap
+            await _escapeRouteManager.WriteEscapeRoutesToBitmap(WoodID, routes);
+
             _dbWriter.WriteLogRecord(new DBLogRecord { woodID = WoodID, message = "Escape ended" });
         }
 
