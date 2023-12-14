@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using EscapeFromTheWoods;
 using MongoDB.Driver;
 
@@ -19,13 +20,13 @@ public class DBwriter
         collection.InsertMany(data);
     }
 
-    public void WriteMonkeyRecords(List<DBMonkeyRecord> data)
+    public async Task WriteMonkeyRecords(List<DBMonkeyRecord> data)
     {
         var collection = database.GetCollection<DBMonkeyRecord>("MonkeyRecords");
         collection.InsertMany(data);
     }
     
-    public void WriteLogRecord(DBLogRecord logRecord)
+    public async Task WriteLogRecord(DBLogRecord logRecord)
     {
         var collection = database.GetCollection<DBLogRecord>("Logs");
         collection.InsertOne(logRecord);

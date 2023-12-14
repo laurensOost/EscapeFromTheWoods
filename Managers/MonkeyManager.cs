@@ -7,6 +7,7 @@ namespace EscapeFromTheWoods
     {
         private DBwriter _dbWriter;
         private List<Monkey> _monkeys;
+        private static object _lock = new object(); //lock object voor thread safety
 
         public MonkeyManager(DBwriter dbWriter)
         {
@@ -19,7 +20,10 @@ namespace EscapeFromTheWoods
             int treeNr;
             do
             {
-                treeNr = r.Next(0, trees.Count);
+                lock (_lock)
+                {
+                    treeNr = r.Next(0, trees.Count);
+                }
             }
             while (trees[treeNr].hasMonkey);
             Monkey m = new Monkey(monkeyID, monkeyName, trees[treeNr]);
@@ -33,6 +37,7 @@ namespace EscapeFromTheWoods
                 message = $"{monkeyName} placed in tree {placedTree.treeID} at location ({placedTree.x},{placedTree.y})"
             });
         }
+    
 
         public List<Monkey> GetMonkeys()
         {

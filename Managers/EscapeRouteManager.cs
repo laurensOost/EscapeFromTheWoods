@@ -17,6 +17,7 @@ namespace EscapeFromTheWoods
         private string _path;
         private Map _map;
         private List<Tree> _trees;
+        private List<List<Tree>> _allRoutes = new List<List<Tree>>();
         private Dictionary<int, Tree> _treeDictionary;
 
         public EscapeRouteManager(string path, DBwriter dbWriter, Map map, List<Tree> trees) 
@@ -204,7 +205,68 @@ namespace EscapeFromTheWoods
 
         }*/
         
-        public List<Tree> FindEscapeRoute(int woodID, Monkey monkey) // met dictionaries ipv lists, O(1) want dictionaries zijn hashtables en hebben een constante lookup tijd
+        public List<Tree> FindEscapeRoute(int woodID, Monkey monkey) // zonder SortedList<double, List<Tree>>, deze werd gebruikt om de afstanden van alle onbezochte bomen te sorteren, wat O(logN) is, dus nogal kostelijk. 
+        {   
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine($"{woodID}:start {woodID},{monkey.name}");
+
+            Dictionary<int, bool> visited = new Dictionary<int, bool>();
+            _trees.ForEach(x => visited.Add(x.treeID, false));
+
+            List<Tree> route = new List<Tree>() { monkey.tree };
+            
+            do
+            {
+                visited[monkey.tree.treeID] = true;
+                
+                Tree closestTree = null;
+                double closestDistanceSquared = double.MaxValue;
+
+                // dichtbijzijnste boom zoeken die nog niet bezocht is
+                foreach (Tree t in _trees)
+                {
+                    if (!visited[t.treeID] && !t.hasMonkey)
+                    {
+                        double distanceSquared = Math.Pow(t.x - monkey.tree.x, 2) + Math.Pow(t.y - monkey.tree.y, 2);
+                        if (distanceSquared < closestDistanceSquared)
+                        {
+                            closestDistanceSquared = distanceSquared;
+                            closestTree = t;
+                        }
+                    }
+                }
+
+                // berekenen van de afstand tot de dichtsbijzijnste grens
+                double distanceToBorder = (new List<double>()
+                {
+                    _map.ymax - monkey.tree.y,
+                    _map.xmax - monkey.tree.x,
+                    monkey.tree.y - _map.ymin,
+                    monkey.tree.x - _map.xmin
+                }).Min();
+
+                // als er geen onbezochte bomen meer zijn of de dichtsbijzijnste grens dichterbij is dan de dichtsbijzijnste boom, eindig de route
+                if (closestTree == null || distanceToBorder < Math.Sqrt(closestDistanceSquared))
+                {
+                    WriteRouteToDB(woodID, monkey, route);
+                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.WriteLine($"{woodID}:end {woodID},{monkey.name}");
+                    stopwatch.Stop();
+                    Console.WriteLine($"Time taken: {stopwatch.ElapsedMilliseconds} ms");
+                    return route;
+                }
+
+                route.Add(closestTree);
+                monkey.tree = closestTree;
+            }
+            while (true);
+        }
+
+        
+        /*public List<Tree> FindEscapeRoute(int woodID, Monkey monkey) // met dictionaries ipv lists, O(1) want dictionaries zijn hashtables en hebben een constante lookup tijd
         {
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
@@ -259,10 +321,10 @@ namespace EscapeFromTheWoods
                 route.Add(nearestTree);
                 monkey.tree = nearestTree;
             }
-        }
+        }*/
 
 
-        public void WriteRouteToDB(int woodID, Monkey monkey, List<Tree> route)
+        public async Task WriteRouteToDB(int woodID, Monkey monkey, List<Tree> route)
         {
             DBMonkeyRecord record = new DBMonkeyRecord
             {
@@ -275,8 +337,8 @@ namespace EscapeFromTheWoods
                     location = new Location { x = t.x, y = t.y }
                 }).ToList()
             };
-            _dbWriter.WriteMonkeyRecords(new List<DBMonkeyRecord> { record });
-            _dbWriter.WriteLogRecord(new DBLogRecord { woodID = woodID, monkeyID = monkey.monkeyID, message = $"Route written to DB for {monkey.name}" });
+            await _dbWriter.WriteMonkeyRecords(new List<DBMonkeyRecord> { record });
+            await _dbWriter.WriteLogRecord(new DBLogRecord { woodID = woodID, monkeyID = monkey.monkeyID, message = $"Route written to DB for {monkey.name}" });
         }
     }
 }

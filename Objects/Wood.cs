@@ -42,7 +42,7 @@ namespace EscapeFromTheWoods
             _dbWriter.WriteLogRecord(new DBLogRecord { woodID = WoodID, message = "Escape ended" });
         }*/
         
-        public async Task Escape() // async, sneller 
+        public async Task Escape() // Changed to async Task to allow awaiting
         {
             List<List<Tree>> routes = new List<List<Tree>>();
             foreach (Monkey m in _monkeyManager.GetMonkeys())
@@ -50,11 +50,12 @@ namespace EscapeFromTheWoods
                 var route = _escapeRouteManager.FindEscapeRoute(WoodID, m);
                 routes.Add(route);
             }
-        
-            // Now awaiting the asynchronous call to write the bitmap
+
+            // Await the asynchronous call to write the bitmap, ensuring it completes before moving on
             await _escapeRouteManager.WriteEscapeRoutesToBitmap(WoodID, routes);
 
-            _dbWriter.WriteLogRecord(new DBLogRecord { woodID = WoodID, message = "Escape ended" });
+            // Write log record indicating the escape has ended
+            await _dbWriter.WriteLogRecord(new DBLogRecord { woodID = WoodID, message = "Escape ended" });
         }
 
         public void WriteWoodToDB()
